@@ -20,7 +20,7 @@ Start Date:         2010-01-04
 End Date:           2018-04-30
 
 #### Equity Curve
-![Equity Curve Chart](readme_assets/equity_curve_chart.pdf "Equity Curve Chart")
+![Equity Curve Chart](readme_assets/equity_curve_chart.png "Equity Curve Chart")
 
 ![Trades Table](readme_assets/trades.csv "Trades Table")
 
