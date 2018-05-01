@@ -39,10 +39,7 @@ class PSEATRChannel(trading_systems.CombinedIndicators, trading.CutLoss):
                 if pd.isnull(last_price):
                     return False
                 else:
-                    stop_price = self.calculate_stop_price(open_trade.Price, open_trade.Date, trading_period, open_trade.Symbol)
-                    if last_price <= stop_price:
-                        print('CUT LOSS', open_trade.Price, stop_price)
-                    return last_price <= stop_price
+                    return last_price <= self.calculate_stop_price(open_trade.Price, open_trade.Date, trading_period, open_trade.Symbol)
         else:
             return True
 
