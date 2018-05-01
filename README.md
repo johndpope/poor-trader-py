@@ -18,7 +18,8 @@ pycodestyle --ignore=E501 poor_trader/pse.py
 #### Config 
 |                      |                        | 
 |----------------------|-----------------------:| 
-| Starting Equity      |  1000000.0             | 
+| Trading System       |  ATR Channel Breakout  |
+| Starting Balance     |  1000000.0             | 
 | Start Date           |  2010-01-04            | 
 | End Date             |  2018-04-30            | 
 | Total Risk Per Trade |  Running Equity * 0.02 | 
