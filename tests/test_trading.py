@@ -15,6 +15,7 @@ TESTS_RESOURCES_PATH = (config.MAIN_PATH / 'tests') / 'resources'
 
 class TestBroker(unittest.TestCase):
     def test_min_requirements_to_init_trading_platform(self):
+        print('- - - - - - - - - - - - - - START test_min_requirements_to_init_trading_platform - - - - - - - - - - - - - -')
         market_name = 'TestMarket'
         config.RESOURCES_PATH = TESTS_RESOURCES_PATH
         config.init_market_dirs_path('TestMarket', config)
@@ -45,8 +46,12 @@ class TestBroker(unittest.TestCase):
         trading_platform = trading.TradingPlatform(portfolio, trading_system)
         self.assertIsInstance(trading_platform, trading.TradingPlatform)
         trading_platform.run()
+        print('- - - - - - - - - - - - - - END test_min_requirements_to_init_trading_platform - - - - - - - - - - - - - -')
 
     def test_pse(self):
+        print()
+        print()
+        print('- - - - - - - - - - - - - - START test_pse - - - - - - - - - - - - - -')
         market = pse.market
         broker = pse.broker
         portfolio = pse.portfolio
@@ -55,6 +60,7 @@ class TestBroker(unittest.TestCase):
 
         trading_platform = trading.TradingPlatform(portfolio, trading_system)
         trading_platform.run(start_date='2010-01-01')
+        print('- - - - - - - - - - - - - - END test_pse - - - - - - - - - - - - - -')
 
 
 if __name__ == '__main__':

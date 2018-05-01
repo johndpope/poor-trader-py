@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 from path import Path
 from enum import Enum
+from poor_trader import reports
 from poor_trader import utils
 from poor_trader import config
 
@@ -191,7 +192,9 @@ class Portfolio(object):
         self.trades.to_csv(self.dirpath / 'trades.csv')
 
         print('Saving', self.fpath)
-        self.transactions.to_csv(self.fpath)
+        self.transactions.to_csv(self.dirpath / 'transactions.csv')
+
+        reports.generate_report(self.trades, self.starting_value, self.df_group_quotes, output_dir_path=self.dirpath, calculate_selling_fees_method=self.broker.calculate_selling_fees)
 
 
 class Direction(Enum):
@@ -249,13 +252,32 @@ class Broker(object):
     def __init__(self, name='Broker'):
         self.name = name
 
-    @abc.abstractmethod
-    def calculate_buy_value(price, shares):
-        raise NotImplementedError
+    def calculate_commission(self, price, shares, commission=0.0025):
+        value = price * shares
+        com = value * commission
+        return com if com > 20 else 20
 
-    @abc.abstractmethod
-    def calculate_sell_value(price, shares):
-        raise NotImplementedError
+    def calculate_buying_fees(self, price, shares, commission=0.0025, vat_on_commission=0.12, pse_trans_fee=0.00005, sccp=0.0001):
+        value = price * shares
+        com = self.calculate_commission(price, shares, commission=commission)
+        vat_com = com * vat_on_commission
+        trans = value * pse_trans_fee
+        sccp_fee = value * sccp
+        return com + vat_com + trans + sccp_fee
+
+    def calculate_selling_fees(self, price, shares, sales_tax=0.006):
+        tax = price * shares * sales_tax
+        return self.calculate_buying_fees(price, shares) + tax
+
+    def calculate_buy_value(self, price, shares):
+        if shares <= 0:
+            return 0
+        return price * shares + self.calculate_buying_fees(price, shares)
+
+    def calculate_sell_value(self, price, shares):
+        if shares <= 0:
+            return 0
+        return price * shares - self.calculate_selling_fees(price, shares)
 
     @abc.abstractmethod
     def trade(self, trading_period, symbol, quantity, action):
