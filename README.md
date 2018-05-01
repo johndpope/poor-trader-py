@@ -15,14 +15,20 @@ pycodestyle --ignore=E501 poor_trader/pse.py
 
 ## Sample Backtest Results
 
-Starting Equity:     1000000.0
-Start Date:         2010-01-04
-End Date:           2018-04-30
+#### Config 
+|                      |                        | 
+|----------------------|-----------------------:| 
+| Starting Equity      |  1000000.0             | 
+| Start Date           |  2010-01-04            | 
+| End Date             |  2018-04-30            | 
+| Total Risk Per Trade |  Running Equity * 0.02 | 
+| Unit Risk            |  Price * 0.2           | 
 
-#### Equity Curve
-![Equity Curve Chart](readme_assets/equity_curve_chart.png "Equity Curve Chart")
 
+
+#### Trades Table
 ![Trades Table](readme_assets/trades.csv "Trades Table")
+
 
 
 #### Performance Table
@@ -57,3 +63,7 @@ End Date:           2018-04-30
 | Profit Factor          | 1.58        | 
 | Payoff Ratio           | 5.24        | 
 
+
+
+#### Equity Curve
+![Equity Curve Chart](readme_assets/equity_curve_chart.png "Equity Curve Chart")
