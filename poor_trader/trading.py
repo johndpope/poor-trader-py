@@ -20,6 +20,7 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 
 class Market(object):
     def __init__(self, historical_data, name='Market', symbols=None):
+        self.name = name
         self.historical_data = historical_data
         self.symbols = symbols or sorted(list([_[:-5] for _ in self.historical_data.filter(like='Date').columns]))
 
@@ -63,7 +64,6 @@ class Portfolio(object):
         self.trades = pd.DataFrame(columns=['BarsHeld', 'StartDate', 'EndDate', 'Symbol', 'BuyPrice', 'SellPrice', 'Shares',
                                             'BuyValue', 'SellValue', 'TotalRisk', 'PnL', 'RMultiple',
                                             'LastRecordDate', 'LastPrice', 'LastValue', 'LastPnL', 'LastRMultiple', 'OpenIndicator', 'CloseIndicator'])
-        config.makedirs_ifneeded(self.dirpath)
 
     def filter_open_symbols(self, symbols):
         if self.positions.empty:
@@ -185,16 +185,20 @@ class Portfolio(object):
         self.equity = self.starting_value - buy_transactions + sell_transactions + positions_value
         self.buying_power = self.starting_value - buy_transactions + sell_transactions
 
-    def save_portfolio(self):
+    def save_portfolio(self, directory_name=None):
         self.translate_transactions_to_trades()
 
-        print('Saving', self.dirpath / 'trades.csv')
-        self.trades.to_csv(self.dirpath / 'trades.csv')
+        directory_name = directory_name or pd.to_datetime('today').strftime('%Y-%m-%d')
+        save_path = self.dirpath / directory_name
+        utils.makedirs(save_path)
+
+        print('Saving', save_path / 'trades.csv')
+        self.trades.to_csv(save_path / 'trades.csv')
 
         print('Saving', self.fpath)
-        self.transactions.to_csv(self.dirpath / 'transactions.csv')
+        self.transactions.to_csv(save_path / 'transactions.csv')
 
-        reports.generate_report(self.trades, self.starting_value, self.df_group_quotes, output_dir_path=self.dirpath, calculate_selling_fees_method=self.broker.calculate_selling_fees)
+        reports.generate_report(self.trades, self.starting_value, self.df_group_quotes, output_dir_path=save_path, calculate_selling_fees_method=self.broker.calculate_selling_fees)
 
 
 class Direction(Enum):
@@ -401,7 +405,8 @@ class TradingPlatform():
 
     def run(self, start_date=None, end_date=None):
         trading_period_list = self.market.iter_trading_periods(start_date, end_date)
-        end_date = pd.to_datetime(trading_period_list[-1][0]).strftime('%Y-%m-%d')
+        end_date = end_date or pd.to_datetime(trading_period_list[-1][0]).strftime('%Y-%m-%d')
+        start_date = start_date or pd.to_datetime(trading_period_list[0][0]).strftime('%Y-%m-%d')
         for trading_period, symbols in trading_period_list:
             self._run_close(trading_period, symbols)
             self._run_open(trading_period, symbols, Direction.LONG)
@@ -411,6 +416,6 @@ class TradingPlatform():
             print(pd.to_datetime(trading_period).strftime('%Y-%m-%d'), '/', end_date, np.round(self.portfolio.buying_power, 1), np.round(self.portfolio.equity, 1), ' '.join(open_symbols))
 
         print(self.portfolio.positions)
-        self.portfolio.save_portfolio()
+        self.portfolio.save_portfolio(directory_name='{}_{}'.format(start_date, end_date))
         print(self.portfolio.trades)
         print()

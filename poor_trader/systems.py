@@ -32,6 +32,27 @@ def run_atr_channel_breakout(symbols, df_group_quotes, prefix='ATRChannel', top=
         df_positions.to_pickle(fpath)
         return fname, df_positions
 
+def run_atr_channel_breakout_sma(symbols, df_group_quotes, prefix='ATRChannelSMA', top=7, bottom=3, sma=120, fast=100, slow=150):
+    fname = '{}{}|{}|{}|{}|{}'.format(prefix, top, bottom, sma, fast, slow)
+    fpath = SYSTEMS_PATH / '{}.pkl'.format(fname)
+    if os.path.exists(fpath):
+        return fname, pd.read_pickle(fpath)
+    else:
+        df_positions = pd.DataFrame()
+        for symbol in symbols:
+            print('Running', symbol)
+            df_quotes = _trim_quotes(symbol, df_group_quotes)
+            df_atr_channel = indicators.atr_channel(df_quotes, top=top, bottom=bottom, sma=sma, symbol=symbol)
+            df_sma = indicators.SMA_cross(df_quotes, fast=fast, slow=slow, symbol=symbol)
+            df = pd.DataFrame(index=df_quotes.index)
+            long_condition = np.logical_and(np.logical_and(df_sma.FastSMA > df_sma.SlowSMA, df_quotes.Close > df_sma.FastSMA),
+                                            np.logical_and(df_quotes.Close > df_atr_channel.top, df_quotes.Close.shift(1) < df_atr_channel.top.shift(1)))
+            short_condition = np.logical_or(df_quotes.Close < df_atr_channel.bottom, df_quotes.Close < df_atr_channel.mid)
+            df[symbol] = np.where(long_condition, 'LONG', np.where(short_condition, 'SHORT', 'HOLD'))
+            df_positions = df_positions.join(df, how='outer')
+        df_positions.to_pickle(fpath)
+        return fname, df_positions
+
 
 def run_dcsma(symbols, df_group_quotes, prefix='DonchianSMA', high=50, low=50, fast=100, slow=150):
     fname = '{}{}|{}|{}|{}'.format(prefix, high, low, fast, slow)

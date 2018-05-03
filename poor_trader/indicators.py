@@ -30,17 +30,37 @@ def true_range(df_quotes):
     return df.filter(like='true_range')
 
 
-def SMA(df_quotes, period, field='Close'):
+def SMA(df_quotes, period, field='Close', symbol=None):
+    if symbol:
+        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_{}_SMA_{}.pkl'.format(symbol, quotes_range(df_quotes), field, period)
+        if os.path.exists(outpath):
+            return pd.read_pickle(outpath)
+
     df = pd.DataFrame(index=df_quotes.index)
     df['SMA'] = df_quotes[field].rolling(period).mean()
     df = utils.round_df(df)
+
+    if symbol:
+        if not os.path.exists(outpath.parent):
+            os.makedirs(outpath.parent)
+        df.to_pickle(outpath)
     return df
 
 
-def STDEV(df_quotes, period, field='Close'):
+def STDEV(df_quotes, period, field='Close', symbol=None):
+    if symbol:
+        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_{}_STDEV_{}.pkl'.format(symbol, quotes_range(df_quotes), field, period)
+        if os.path.exists(outpath):
+            return pd.read_pickle(outpath)
+
     df = pd.DataFrame(index=df_quotes.index)
     df['STDEV'] = df_quotes[field].rolling(period).std()
     df = utils.round_df(df)
+
+    if symbol:
+        if not os.path.exists(outpath.parent):
+            os.makedirs(outpath.parent)
+        df.to_pickle(outpath)
     return df
 
 
@@ -54,7 +74,12 @@ def _ema(i, df_quotes, df_ema, period, field='Close'):
         return c * price[field] + (1. - c) * prev_ema.EMA
 
 
-def EMA(df_quotes, period, field='Close'):
+def EMA(df_quotes, period, field='Close', symbol=None):
+    if symbol:
+        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_{}_EMA_{}.pkl'.format(symbol, quotes_range(df_quotes), field, period)
+        if os.path.exists(outpath):
+            return pd.read_pickle(outpath)
+
     c = 2./(period + 1.)
     df = pd.DataFrame(columns=['EMA'], index=df_quotes.index)
     sma = SMA(df_quotes, period, field)
@@ -68,9 +93,14 @@ def EMA(df_quotes, period, field='Close'):
         price = df_quotes.iloc[i]
         ema_value = c * price[field] + (1. - c) * prev_ema.EMA
         df.loc[df_quotes.index.values[i], 'EMA'] = ema_value
-
     df = utils.round_df(df)
+
+    if symbol:
+        if not os.path.exists(outpath.parent):
+            os.makedirs(outpath.parent)
+        df.to_pickle(outpath)
     return df
+
 
 
 def ATR(df_quotes, period=10, symbol=None):
@@ -108,7 +138,7 @@ def atr_channel(df_quotes, top=7, bottom=3, sma=150, symbol=None):
             return pd.read_pickle(outpath)
     df_top_atr = ATR(df_quotes, period=top, symbol=symbol)
     df_bottom_atr = ATR(df_quotes, period=bottom, symbol=symbol)
-    df_sma = SMA(df_quotes, period=sma)
+    df_sma = SMA(df_quotes, period=sma, symbol=symbol)
 
     df = pd.DataFrame(columns=['top', 'mid', 'bottom'], index=df_quotes.index)
     df['mid'] = df_sma.SMA
@@ -202,10 +232,10 @@ def MACD(df_quotes, fast=12, slow=26, signal=9, symbol=None):
             return pd.read_pickle(outpath)
 
     df = pd.DataFrame(index=df_quotes.index)
-    fast_ema = EMA(df_quotes, fast)
-    slow_ema = EMA(df_quotes, slow)
+    fast_ema = EMA(df_quotes, fast, symbol=symbol)
+    slow_ema = EMA(df_quotes, slow, symbol=symbol)
     df['MACD'] = fast_ema.EMA - slow_ema.EMA
-    signal_ema = EMA(df, signal, field='MACD')
+    signal_ema = EMA(df, signal, field='MACD', symbol=symbol)
     df['Signal'] = signal_ema.EMA
     df['MACDCrossoverSignal'] = np.where(np.logical_and(df.MACD > df.Signal, df.MACD.shift(1) <= df.Signal.shift(1)), 1, 0)
     df['SignalCrossoverMACD'] = np.where(np.logical_and(df.MACD < df.Signal, df.Signal.shift(1) <= df.MACD.shift(1)), 1, 0)
@@ -220,13 +250,13 @@ def MACD(df_quotes, fast=12, slow=26, signal=9, symbol=None):
 
 def SMA_cross(df_quotes, fast=40, slow=60, symbol=None, field='Close'):
     if symbol:
-        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_MA_cross_{}_{}.pkl'.format(symbol, quotes_range(df_quotes), fast, slow)
+        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_{}_SMA_cross_{}_{}.pkl'.format(symbol, quotes_range(df_quotes), field, fast, slow)
         if os.path.exists(outpath):
             return pd.read_pickle(outpath)
 
     df = pd.DataFrame(index=df_quotes.index)
-    fast_sma = SMA(df_quotes, fast, field=field)
-    slow_sma = SMA(df_quotes, slow, field=field)
+    fast_sma = SMA(df_quotes, fast, field=field, symbol=symbol)
+    slow_sma = SMA(df_quotes, slow, field=field, symbol=symbol)
     df['FastSMA'] = fast_sma.SMA
     df['SlowSMA'] = slow_sma.SMA
     df['SlowCrossoverFast'] = np.where(np.logical_and(df.FastSMA <= df.SlowSMA, df.FastSMA.shift(1) > df.SlowSMA.shift(1)), 1, 0)
@@ -240,18 +270,28 @@ def SMA_cross(df_quotes, fast=40, slow=60, symbol=None, field='Close'):
     return df
 
 
-def SLSMA(df_quotes, s_fast=40, s_slow=60, l_fast=100, l_slow=150, field='Close'):
+def SLSMA(df_quotes, s_fast=40, s_slow=60, l_fast=100, l_slow=150, field='Close', symbol=None):
+    if symbol:
+        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_{}_SLSMA_cross_{}_{}.pkl'.format(symbol, quotes_range(df_quotes), field, s_fast, s_slow, l_fast, l_slow)
+        if os.path.exists(outpath):
+            return pd.read_pickle(outpath)
+
     # For charting...
     df = pd.DataFrame(index=df_quotes.index)
-    s_fast_sma = SMA(df_quotes, s_fast, field=field)
-    s_slow_sma = SMA(df_quotes, s_slow, field=field)
-    l_fast_sma = SMA(df_quotes, l_fast, field=field)
-    l_slow_sma = SMA(df_quotes, l_slow, field=field)
+    s_fast_sma = SMA(df_quotes, s_fast, field=field, symbol=symbol)
+    s_slow_sma = SMA(df_quotes, s_slow, field=field, symbol=symbol)
+    l_fast_sma = SMA(df_quotes, l_fast, field=field, symbol=symbol)
+    l_slow_sma = SMA(df_quotes, l_slow, field=field, symbol=symbol)
     df['S_FastSMA'] = s_fast_sma.SMA
     df['S_SlowSMA'] = s_slow_sma.SMA
     df['L_FastSMA'] = l_fast_sma.SMA
     df['L_SlowSMA'] = l_slow_sma.SMA
     df = utils.round_df(df)
+
+    if symbol:
+        if not os.path.exists(outpath.parent):
+            os.makedirs(outpath.parent)
+        df.to_pickle(outpath)
     return df
 
 
@@ -274,7 +314,7 @@ def trend_strength_indicator(df_quotes, start=40, end=150, step=5, symbol=None):
     columns = [x for x in range(start, end, step)]
     columns += [end]
     for col in columns:
-        df['SMA{}'.format(col)] = SMA(df_quotes, col)
+        df['SMA{}'.format(col)] = SMA(df_quotes, col, symbol=symbol)
     col_size = len(columns)
     df_comparison = df.lt(df_quotes.Close, axis=0)
     df_comparison['CountSMABelowPrice'] = round(100 * (df_comparison.filter(like='SMA') == True).astype(int).sum(axis=1) / col_size)
@@ -296,8 +336,8 @@ def bollinger_band(df_quotes, period=60, stdev=1.2, symbol=None):
             return pd.read_pickle(outpath)
 
     df = pd.DataFrame(index=df_quotes.index)
-    df_sma = SMA(df_quotes, period)
-    df_stdev = STDEV(df_quotes, period)
+    df_sma = SMA(df_quotes, period, symbol=symbol)
+    df_stdev = STDEV(df_quotes, period, symbol=symbol)
     df['UP'] = df_sma.SMA + (df_stdev.STDEV * stdev)
     df['MID'] = df_sma.SMA
     df['LOW'] = df_sma.SMA - (df_stdev.STDEV * stdev)
@@ -331,7 +371,7 @@ def RSI(df_quotes, period=20, symbol=None, field='Close'):
     :return:
     """
     if symbol:
-        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_RSI_{}.pkl'.format(symbol, quotes_range(df_quotes), period)
+        outpath = INDICATORS_OUTPUT_PATH / '{}/{}_{}_RSI_{}.pkl'.format(symbol, quotes_range(df_quotes), field, period)
         if os.path.exists(outpath):
             return pd.read_pickle(outpath)
 

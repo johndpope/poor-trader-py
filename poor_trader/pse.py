@@ -17,12 +17,12 @@ from poor_trader.sample import position_sizing_methods
 market = trading.Market(name='PSEMarket', historical_data=pd.read_pickle(config.HISTORICAL_DATA_PATH))
 broker = brokers.PSEBroker(market)
 position_sizing = position_sizing_methods.EquityPctBased(market)
-portfolio = trading.Portfolio(name='PSEPortfolio', starting_value=1000000, market=market, broker=broker, position_sizing=position_sizing)
+portfolio = trading.Portfolio(name='PSEPortfolio', starting_value=100000, market=market, broker=broker, position_sizing=position_sizing)
 
 class PSEATRChannel(trading_systems.CombinedIndicators, trading.CutLoss):
     def __init__(self, portfolio, name='PSEATRChannelStopPrice', stop_price_pct=0.2):
         super(PSEATRChannel, self).__init__(name=name, portfolio=portfolio,
-                                            systems_method_list=[systems.run_atr_channel_breakout(market.symbols, market.historical_data)])
+                                            systems_method_list=[systems.run_atr_channel_breakout_sma(market.symbols, market.historical_data)])
         trading.CutLoss.__init__(self, portfolio=portfolio, stop_price_pct=stop_price_pct)
 
     def is_short(self, trading_period, symbol):

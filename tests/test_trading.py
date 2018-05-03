@@ -6,20 +6,15 @@ import unittest
 import os
 from path import Path
 import pandas as pd
+from poor_trader import config
 from poor_trader import trading
 from poor_trader import pse
-from poor_trader import config
 
-
-TESTS_RESOURCES_PATH = (config.MAIN_PATH / 'tests') / 'resources'
 
 class TestBroker(unittest.TestCase):
     def test_min_requirements_to_init_trading_platform(self):
         print('- - - - - - - - - - - - - - START test_min_requirements_to_init_trading_platform - - - - - - - - - - - - - -')
         market_name = 'TestMarket'
-        config.RESOURCES_PATH = TESTS_RESOURCES_PATH
-        config.init_market_dirs_path('TestMarket', config)
-
         market = trading.Market(name=market_name, historical_data=pd.read_csv(
             config.RESOURCES_PATH / 'historical_data.csv',
             parse_dates=True, index_col=0),
@@ -44,7 +39,6 @@ class TestBroker(unittest.TestCase):
         trading_system.is_short = _is_short
 
         trading_platform = trading.TradingPlatform(portfolio, trading_system)
-        self.assertIsInstance(trading_platform, trading.TradingPlatform)
         trading_platform.run()
         print('- - - - - - - - - - - - - - END test_min_requirements_to_init_trading_platform - - - - - - - - - - - - - -')
 

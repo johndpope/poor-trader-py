@@ -3,7 +3,7 @@ from poor_trader import trading
 
 
 class EquityPctBased(trading.PositionSizing):
-    def __init__(self, market, total_risk_pct=0.02, unit_risk_pct=0.2):
+    def __init__(self, market, total_risk_pct=0.01, unit_risk_pct=0.2):
         super(EquityPctBased, self).__init__(name='EquityPctBased')
         self.market = market
         self.total_risk_pct = total_risk_pct

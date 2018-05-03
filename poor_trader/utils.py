@@ -5,6 +5,11 @@ import pandas as pd
 import traceback
 
 
+def makedirs(path):
+    if not os.path.exists(path):
+        print('Creating directory', path)
+        os.makedirs(path)
+
 def load_trades(fpath=None):
     columns = ['StartDate', 'EndDate', 'Symbol', 'BuyPrice', 'SellPrice',
                'Shares', 'BuyValue', 'SellValue', 'TotalRisk', 'PnL', 'RMultiple',
